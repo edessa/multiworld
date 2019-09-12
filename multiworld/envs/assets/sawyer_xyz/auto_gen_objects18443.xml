@@ -1,0 +1,30 @@
+<top>
+    <worldbody>
+        <body name="object0" pos="0 0 0">
+            <joint armature="0" damping="0" limited="false" type="free"/>
+            <inertial diaginertia="100000 100000 100000" mass="0.1" pos="0 0 0"/>
+            <geom conaffinity="20" contype="18" name="object0" pos="0 0 0" rgba="0.646178535968591 0.6222122329009602 0.34661422423010957 1" size="0.04 0.015" type="cylinder"/>
+        </body>
+        <body name="object1" pos="0 0 0">
+            <joint armature="0" damping="0" limited="false" type="free"/>
+            <inertial diaginertia="100000 100000 100000" mass="0.1" pos="0 0 0"/>
+            <geom conaffinity="20" contype="18" name="object1" pos="0 0 0" rgba="0.6132542966810303 0.5016692159510105 0.6818378814117192 1" size="0.04 0.015" type="cylinder"/>
+        </body>
+        <body name="object2" pos="0 0 0">
+            <joint armature="0" damping="0" limited="false" type="free"/>
+            <inertial diaginertia="100000 100000 100000" mass="0.1" pos="0 0 0"/>
+            <geom conaffinity="20" contype="18" name="object2" pos="0 0 0" rgba="0.7379399674932232 0.4797910958527451 0.31951807794981296 1" size="0.04 0.015" type="cylinder"/>
+        </body>
+        <body name="object3" pos="0 0 0">
+            <joint armature="0" damping="0" limited="false" type="free"/>
+            <inertial diaginertia="100000 100000 100000" mass="0.1" pos="0 0 0"/>
+            <geom conaffinity="20" contype="18" name="object3" pos="0 0 0" rgba="0.715263875074246 0.44966960562698477 0.4001340677791424 1" size="0.04 0.015" type="cylinder"/>
+        </body>
+    </worldbody>
+    <sensor>
+        <framepos name="object0_sensor" objname="object0" objtype="body"/>
+        <framepos name="object1_sensor" objname="object1" objtype="body"/>
+        <framepos name="object2_sensor" objname="object2" objtype="body"/>
+        <framepos name="object3_sensor" objname="object3" objtype="body"/>
+    </sensor>
+</top>
