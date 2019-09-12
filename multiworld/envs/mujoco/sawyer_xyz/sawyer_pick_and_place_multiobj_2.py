@@ -599,7 +599,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
                 puck_no = random.randint(1, self.num_objects-1)
                 position = self.get_object_pos(puck_no)[:2]
                 goals[j][3:] = np.append(position, 0.1)
-                goals[j][0:3] = [position[0], position[1], 0.18]
+                goals[j][0:3] = [position[0], position[1], 0.16]
             # Put object one the table (not floating)
             #goals[num_objs_in_hand:, 5] = self.obj_init_z #all z positions set on table for num_obs*prob_hand:onwards
             return {
