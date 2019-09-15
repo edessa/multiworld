@@ -8,8 +8,9 @@ import time
 
 imsize = 480
 multiworld.register_all_envs()
-env = gym.make('SawyerPickupMultiobj-v0')
+#env = gym.make('SawyerPickupMultiobj-v0')
 #env = gym.make('SawyerPickupEnv-v0')
+env = gym.make('SawyerPickupEnv-v1')
 
 env = ImageEnv(
     env,
@@ -21,15 +22,15 @@ env = ImageEnv(
 )
 i = 0
 
-obs = env.reset()
 
-action = np.array([1,1,1,1])
+for j in range(0, 20):
+    obs = env.reset()
+    action = np.array([1,1,1,1])
 
-obs_img = 255*obs['observation'].reshape(3, 480, 480).transpose()
-cv2.imwrite('obs.png', obs_img)
-
-obs_2_img = 255*obs['desired_goal'].reshape(3, 480, 480).transpose()
-cv2.imwrite('goal.png', obs_2_img)
+    obs_img = 255*obs['observation'].reshape(3, 480, 480).transpose()
+    cv2.imwrite('obs' + str(j) + '.png', obs_img)
+    obs_2_img = 255*obs['image_desired_goal'].reshape(3, 480, 480).transpose()
+    cv2.imwrite('goal' + str(j) + '.png', obs_2_img)
 
 #goal = env.sample_goal()
 #obs_img = 255*goal['desired_goal'].reshape(3, 480, 480).transpose()

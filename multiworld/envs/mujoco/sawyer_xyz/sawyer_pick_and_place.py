@@ -31,7 +31,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             oracle_reset_prob=0.0,
             presampled_goals=None,
             num_goals_presampled=10,
-            p_obj_in_hand=0.75,
+            p_obj_in_hand=.75,
 
             **kwargs
     ):
@@ -110,7 +110,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         else:
             # presampled_goals will be created when sample_goal is first called
             self._presampled_goals = None
-        self.num_goals_presampled = 10
+            self.num_goals_presampled = num_goals_presampled
         self.picked_up_object = False
         self.train_pickups = 0
         self.eval_pickups = 0
@@ -129,7 +129,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             self.cur_mode = 'eval'
 
     def viewer_setup(self):
-        sawyer_pick_and_place_camera_zoomed(self.viewer.cam)
+        sawyer_pick_and_place_camera(self.viewer.cam)
 
     def step(self, action):
         self.set_xyz_action(action[:3])
@@ -232,12 +232,29 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
 
     def reset_model(self):
         self._reset_hand()
+        if self.reset_free:
+            self._set_obj_xyz(self.last_obj_pos)
+            self.set_goal(self.sample_goal())
+            self._set_goal_marker(self._state_goal)
+            return self._get_obs()
 
-        obj_idx = np.random.choice(len(self.obj_init_positions))
-        self._set_obj_xyz(self.obj_init_positions[obj_idx])
+        if self.random_init:
+            goal = np.random.uniform(
+                self.hand_and_obj_space.low[3:],
+                self.hand_and_obj_space.high[3:],
+                size=(1, self.hand_and_obj_space.low.size - 3),
+            )
+            goal[:, 2] = self.obj_init_z
+            self._set_obj_xyz(goal)
+        else:
+            obj_idx = np.random.choice(len(self.obj_init_positions))
+            self._set_obj_xyz(self.obj_init_positions[obj_idx])
+
+        if self.oracle_reset_prob > np.random.random():
+            self.set_to_goal(self.sample_goal())
 
         self.set_goal(self.sample_goal())
-        #self._set_goal_marker(self._state_goal)
+        self._set_goal_marker(self._state_goal)
         self.picked_up_object = False
         return self._get_obs()
 
