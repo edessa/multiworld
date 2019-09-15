@@ -354,7 +354,25 @@ def register_mujoco_envs():
             hand_high=(0.0, 0.65, 0.2),
             action_scale=0.02,
             hide_goal_markers=True,
-            num_goals_presampled=10,
+            num_goals_presampled=1000,
+        )
+
+    )
+
+    register(
+        id='SawyerPickupEnv-v1',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_pick_and_place_multi_color:SawyerPickAndPlaceEnv',
+        tags={
+            'git-commit-hash': '30f23f7',
+            'author': 'steven',
+        },
+        kwargs=dict(
+            hand_low=(-0.1, 0.55, 0.05),
+            hand_high=(0.0, 0.65, 0.2),
+            action_scale=0.02,
+            hide_goal_markers=True,
+            num_goals_presampled=1000,
         )
 
     )
