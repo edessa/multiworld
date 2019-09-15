@@ -7,7 +7,7 @@ from multiworld.envs.env_util import get_stat_in_paths, \
 from multiworld.core.multitask_env import MultitaskEnv
 from multiworld.envs.mujoco.sawyer_xyz.base import SawyerXYZEnv
 from multiworld.envs.mujoco.cameras import sawyer_pick_and_place_camera
-import random
+
 
 class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
     def __init__(
@@ -18,7 +18,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             reward_type='hand_and_obj_distance',
             indicator_threshold=0.06,
 
-            #obj_init_positions=((0, 0.6, 0.02),),
+            obj_init_positions=((0, 0.6, 0.02),),
             random_init=False,
 
             fix_goal=False,
@@ -27,19 +27,11 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             goal_high=None,
             reset_free=False,
 
-            num_objs = 2,
-
-            colors=np.array([[0, 0, 0, 1], [1, 1, 0, 1], [0, 0.5, 0, 1], \
-            [0, 0, 0.5, 1], [0.5, 0, 0.5, 1], [0, 0.5, 0.5, 1], [1, 1, 1, 1], \
-            [0.5, 0.5, 0, 1]]),
-
-            init_positions = [[x, y, 0.02] for x in [-0.075, -0.05, -0.025] for y in [0.575, 0.6, 0.625]],
-
-            hide_goal_markers=True,
+            hide_goal_markers=False,
             oracle_reset_prob=0.0,
             presampled_goals=None,
             num_goals_presampled=1000,
-            p_obj_in_hand=0.6,
+            p_obj_in_hand=1.,
 
             **kwargs
     ):
@@ -61,17 +53,14 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         if goal_high is None:
             goal_high = np.hstack((self.hand_high, obj_high))
 
-        self.num_objs = num_objs
-
-        self.colors = colors
-        self.init_positions = init_positions
-
         self.reward_type = reward_type
         self.random_init = random_init
         self.p_obj_in_hand = p_obj_in_hand
         self.indicator_threshold = indicator_threshold
 
-        self.obj_init_z = 0.02
+        self.obj_init_z = obj_init_positions[0][2]
+        self.obj_init_positions = np.array(obj_init_positions)
+        self.last_obj_pos = self.obj_init_positions[0]
 
         self.fix_goal = fix_goal
         self.fixed_goal = np.array(fixed_goal)
@@ -121,13 +110,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         else:
             # presampled_goals will be created when sample_goal is first called
             self._presampled_goals = None
-            self.num_goals_presampled = num_goals_presampled
-        self.num_pickups = 0
-        self.num_moves = 0
-
-        self.max_pickups = int(self.num_goals_presampled * self.p_obj_in_hand)
-        self.max_moves = int((self.num_goals_presampled) * (1.0-self.p_obj_in_hand))
-
+            self.num_goals_presampled = 30
         self.picked_up_object = False
         self.train_pickups = 0
         self.eval_pickups = 0
@@ -167,6 +150,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
                     self.eval_pickups += 1
                 self.picked_up_object = True
         self._set_obj_xyz(new_obj_pos)
+        self.last_obj_pos = new_obj_pos.copy()
         # The marker seems to get reset every time you do a simulation
         self._set_goal_marker(self._state_goal)
         ob = self._get_obs()
@@ -248,7 +232,6 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
 
     def reset_model(self):
         self._reset_hand()
-        idx = random.randint(0, self.num_objs-1)
         if self.reset_free:
             self._set_obj_xyz(self.last_obj_pos)
             self.set_goal(self.sample_goal())
@@ -264,8 +247,8 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             goal[:, 2] = self.obj_init_z
             self._set_obj_xyz(goal)
         else:
-            self._set_obj_xyz(self.init_positions[idx])
-            self.model.geom_rgba[len(self.model.geom_rgba) - 1] = self.colors[idx]
+            obj_idx = np.random.choice(len(self.obj_init_positions))
+            self._set_obj_xyz(self.obj_init_positions[obj_idx])
 
         if self.oracle_reset_prob > np.random.random():
             self.set_to_goal(self.sample_goal())
@@ -296,15 +279,15 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         corrected_obj_pos = state_goal[3:] + error
         corrected_obj_pos[2] = max(corrected_obj_pos[2], self.obj_init_z)
         self._set_obj_xyz(corrected_obj_pos)
-        if corrected_obj_pos[2] > .03:
-            action = np.array(1)
-        else:
-            action = np.array(1 - 2 * np.random.choice(2))
+        action = np.array([1])
+    #    if corrected_obj_pos[2] > .03:
+    #        action = np.array(1)
+    #    else:
+    #        action = np.array(1 - 2 * np.random.choice(2))
     #    action = np.array([1])
         for _ in range(10):
             self.do_simulation(action)
         self.sim.forward()
-    #    print("setting in set_to_goal", state_goal, self.data.get_site_xpos('obj'))
 
     """
     Multitask functions
@@ -321,17 +304,21 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
 
     def sample_goals(self, batch_size):
         if self._presampled_goals is None:
-            t = 0
-            self._presampled_goals = {'desired_goal': np.zeros((self.num_goals_presampled, 6)), \
-            'proprio_desired_goal': np.zeros((self.num_goals_presampled, 3)), \
-            'state_desired_goal':  np.zeros((self.num_goals_presampled, 6))}
-            while self._presampled_goals is None or t < self.num_goals_presampled:
-                a = corrected_state_goals(self, self.generate_uncorrected_env_goals(self.num_goals_presampled))
-                if len(a['desired_goal']) > 0:
-                    self._presampled_goals['desired_goal'][t:min(self.num_goals_presampled, t+len(a['desired_goal']))] = a['desired_goal'][:self.num_goals_presampled-t]
-                    self._presampled_goals['proprio_desired_goal'][t:min(self.num_goals_presampled, t+len(a['proprio_desired_goal']))] = a['proprio_desired_goal'][:self.num_goals_presampled-t]
-                    self._presampled_goals['state_desired_goal'][t:min(self.num_goals_presampled, t+len(a['state_desired_goal']))] = a['state_desired_goal'][:self.num_goals_presampled-t]
-                t += len(a['desired_goal'])
+            for x in np.arange(-0.05, 0.05, 0.01):
+                for y in np.arange(-0.05, 0.05, 0.01):
+                            for z in np.arange(-0.05, 0.05, 0.01):
+                                t = 0
+                                self._presampled_goals = {'desired_goal': np.zeros((self.num_goals_presampled, 6)), \
+                                'proprio_desired_goal': np.zeros((self.num_goals_presampled, 3)), \
+                                'state_desired_goal':  np.zeros((self.num_goals_presampled, 6))}
+        #    while self._presampled_goals is None or t < self.num_goals_presampled:
+                                a = corrected_state_goals(self, self.generate_uncorrected_env_goals(self.num_goals_presampled, x, y, z))
+                                #if len(a['desired_goal']) > 0:
+                                #    self._presampled_goals['desired_goal'][t:min(self.num_goals_presampled, t+len(a['desired_goal']))] = a['desired_goal'][:self.num_goals_presampled-t]
+                                #    self._presampled_goals['proprio_desired_goal'][t:min(self.num_goals_presampled, t+len(a['proprio_desired_goal']))] = a['proprio_desired_goal'][:self.num_goals_presampled-t]
+                                #    self._presampled_goals['state_desired_goal'][t:min(self.num_goals_presampled, t+len(a['state_desired_goal']))] = a['state_desired_goal'][:self.num_goals_presampled-t]
+                                #t += len(a['desired_goal'])
+                                print(x, y, z, len(a['desired_goal']))
 
         idx = np.random.randint(0, self.num_goals_presampled, batch_size)
         sampled_goals = {
@@ -416,7 +403,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         self._state_goal = goal
         self._set_goal_marker(goal)
 
-    def generate_uncorrected_env_goals(self, num_goals):
+    def generate_uncorrected_env_goals(self, num_goals, x, y, z):
         """
         Due to small errors in mocap, moving to a specified hand position may be
         slightly off. This is an issue when the object must be placed into a given
@@ -443,9 +430,9 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
 
             # Put object in hand
             goals[:num_objs_in_hand, 3:] = goals[:num_objs_in_hand, :3].copy()
-            goals[:num_objs_in_hand, 3] -= 0.01
-            goals[:num_objs_in_hand, 4] -= 0.04
-            goals[:num_objs_in_hand, 5] += 0.03
+            goals[:num_objs_in_hand, 3] += x
+            goals[:num_objs_in_hand, 4] += y
+            goals[:num_objs_in_hand, 5] += z
 
             # Put object one the table (not floating)
             goals[num_objs_in_hand:, 5] = self.obj_init_z
@@ -465,23 +452,13 @@ def corrected_state_goals(pickup_env, pickup_env_goals):
         pickup_env.set_to_goal(
             {'state_desired_goal': goals['state_desired_goal'][idx]}
         )
-        z = pickup_env._get_obs()['achieved_goal']
-        #print(idx, pickup_env.max_pickups, pickup_env.num_moves, pickup_env.max_moves)
-        if (not(idx < pickup_env.max_pickups) and  \
-        pickup_env.num_moves < pickup_env.max_moves) or (\
-        pickup_env.data.get_site_xpos('obj')[2] >= 0.02 and \
-        min(z - pickup_env.hand_and_obj_space.low) > 0 and \
-        max(z - pickup_env.hand_and_obj_space.high) < 0):
-            #corrected_state_goal = pickup_env._get_obs()['achieved_goal']
-            #corrected_proprio_goal = pickup_env._get_obs()['proprio_achieved_goal']
-            corrected_state_goal = goals['state_desired_goal'][idx]
-            corrected_proprio_goal = goals['state_desired_goal'][idx][0:3]
+        if not(idx < int(num_goals * pickup_env.p_obj_in_hand)) or pickup_env._get_obs()['achieved_goal'][5] >= 0.018:
+            corrected_state_goal = pickup_env._get_obs()['achieved_goal']
+            corrected_proprio_goal = pickup_env._get_obs()['proprio_achieved_goal']
 
             goals['desired_goal'][j] = corrected_state_goal
             goals['proprio_desired_goal'][j] = corrected_proprio_goal
             goals['state_desired_goal'][j] = corrected_state_goal
-            if not(idx < int(num_goals * pickup_env.p_obj_in_hand)):
-                pickup_env.num_moves += 1
             j += 1
     goals['desired_goal'] = goals['desired_goal'][0:j]
     goals['proprio_desired_goal'] = goals['proprio_desired_goal'][0:j]
