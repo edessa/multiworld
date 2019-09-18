@@ -34,8 +34,8 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             puck_goal_high=(0.1, 0.7),
             hand_goal_low=(-0.1, 0.5),
             hand_goal_high=(0.1, 0.7),
-            mocap_low=(-0.1, 0.5, 0.0),
-            mocap_high=(0.1, 0.7, 0.5),
+            mocap_low=(-0.15, 0.45, 0.0),
+            mocap_high=(0.15, 0.75, 0.5),
             # unused
             init_block_low=(-0.05, 0.55),
             init_block_high=(0.05, 0.65),
@@ -50,9 +50,15 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             obj_classname = None,
             block_height=0.02,
             block_width = 0.02,
+<<<<<<< HEAD
             cylinder_radius = 0.03,
             finger_sensors=False,
             maxlen=0.07,
+=======
+            cylinder_radius = 0.04,
+            finger_sensors=False,
+            maxlen=0.085,
+>>>>>>> b1670b556462cebae3829756ea0e737aa9537619
             minlen=0.01,
             preload_obj_dict=None,
 
@@ -433,7 +439,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
                 r = np.random.randint(self.num_objects) # object to move
                 pos = bs + [self.INIT_HAND_POS[:2], ]
                 while True:
-                    bs[r] = np.random.uniform(self.puck_goal_low, self.puck_goal_high)
+                    bs[r] = np.random.uniform(bs[r] - [0.06, 0.06], bs[r] + [0.06, 0.06])
                     touching = []
                     for i in range(self.num_objects + 1):
                         if i != r:

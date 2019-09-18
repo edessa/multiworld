@@ -118,6 +118,7 @@ def register_mujoco_envs():
         )
     )
 
+
     register(
         id='SawyerPushAndReachEnvMedium-v0',
         entry_point='multiworld.envs.mujoco.sawyer_xyz'
@@ -371,7 +372,7 @@ def register_mujoco_envs():
             hand_high=(0.0, 0.65, 0.2),
             action_scale=0.02,
             hide_goal_markers=True,
-            num_goals_presampled=10,
+            num_goals_presampled=1000,
         )
 
     )
@@ -380,6 +381,24 @@ def register_mujoco_envs():
         id='SawyerPickupEnv-v1',
         entry_point='multiworld.envs.mujoco.sawyer_xyz'
                     '.sawyer_pick_and_place_single_multi_color:SawyerPickAndPlaceEnv',
+        tags={
+            'git-commit-hash': '30f23f7',
+            'author': 'steven',
+        },
+        kwargs=dict(
+            hand_low=(-0.1, 0.55, 0.05),
+            hand_high=(0.0, 0.65, 0.2),
+            action_scale=0.02,
+            hide_goal_markers=True,
+            num_goals_presampled=10,
+        )
+
+    )
+
+    register(
+        id='SawyerPickupEnv-v2',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_pick_and_place_double_multi_color:SawyerPickAndPlaceEnv',
         tags={
             'git-commit-hash': '30f23f7',
             'author': 'steven',
@@ -531,8 +550,36 @@ def register_mujoco_envs():
             'author': 'eadom',
         },
         kwargs=dict(
-            num_objects=4,
         )
+    )
+
+    register(
+        id='SawyerMultiObj-v1',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_multiobj_subset:SawyerMultiobjectEnv',
+        tags={
+            'git-commit-hash': '8bfd74b40f983e15026981344323b8e9539b4b21',
+            'author': 'eadom',
+        },
+        kwargs=dict(
+        )
+    )
+
+    register(
+        id='SawyerPushNESW-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_nesw:SawyerPushAndReachXYEasyEnv',
+        tags={
+            'git-commit-hash': 'bede25d',
+            'author': 'eadom',
+        },
+        kwargs=dict(
+            hide_goal=True,
+            reward_info=dict(
+                type="state_distance",
+            ),
+        )
+
     )
 
     """

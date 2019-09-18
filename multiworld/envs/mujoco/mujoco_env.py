@@ -30,7 +30,7 @@ class MujocoEnv(gym.Env):
         self.model = mujoco_py.load_model_from_path(fullpath)
         #print(getattr(self.model))
         #print(dir(self.model))
-    #    print(len(self.model.geom_rgba))
+        print(len(self.model.geom_rgba))
     #    self.model.geom_rgba[len(self.model.geom_rgba) - 1] = np.array([0, 1, 0, 1])
         self.sim = mujoco_py.MjSim(self.model)
         self.data = self.sim.data

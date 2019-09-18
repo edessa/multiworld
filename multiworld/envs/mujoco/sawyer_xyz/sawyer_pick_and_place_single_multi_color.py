@@ -27,7 +27,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             goal_high=None,
             reset_free=False,
 
-            num_objs = 2,
+            num_objs = 5,
 
             colors=np.array([[0, 0, 0, 1], [1, 1, 0, 1], [0, 0.5, 0, 1], \
             [0, 0, 0.5, 1], [0.5, 0, 0.5, 1], [0, 0.5, 0.5, 1], [1, 1, 1, 1], \
@@ -39,7 +39,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             oracle_reset_prob=0.0,
             presampled_goals=None,
             num_goals_presampled=1000,
-            p_obj_in_hand=0.6,
+            p_obj_in_hand=0.75,
 
             **kwargs
     ):
@@ -132,6 +132,8 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
         self.train_pickups = 0
         self.eval_pickups = 0
         self.cur_mode = 'train'
+
+        print(self.p_obj_in_hand, self.num_objs)
         self.reset()
 
     @property
