@@ -10,12 +10,12 @@ imsize = 480
 multiworld.register_all_envs()
 #env = gym.make('SawyerPickupMultiobj-v0')
 #env = gym.make('SawyerPickupEnv-v0')
-env = gym.make('SawyerPickupEnv-v1')
+env = gym.make('SawyerMultiObj-v0')
 
 env = ImageEnv(
     env,
     imsize = imsize,
-    init_camera=sawyer_pick_and_place_camera_slanted_angle,
+    init_camera=sawyer_pusher_camera_upright_v1,
     transpose=True,
     normalize=True,
 
@@ -25,6 +25,7 @@ i = 0
 
 for j in range(0, 20):
     obs = env.reset()
+    print("reset")
     action = np.array([1,1,1,1])
 
     obs_img = 255*obs['observation'].reshape(3, 480, 480).transpose()
