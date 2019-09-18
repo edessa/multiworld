@@ -59,7 +59,8 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         self._goal_xyxy = self.sample_goal_xyxy()
         # MultitaskEnv.__init__(self, distance_metric_order=2)
         MujocoEnv.__init__(self, self.model_name, frame_skip=frame_skip)
-
+        print("HELLO")
+        print(self.data)
         self.action_space = Box(
             np.array([-1, -1]),
             np.array([1, 1]),

@@ -6,16 +6,18 @@ from multiworld.core.image_env import ImageEnv
 from multiworld.envs.mujoco.cameras import *
 import time
 
-imsize = 480
+imsize = 48
 multiworld.register_all_envs()
 #env = gym.make('SawyerPickupMultiobj-v0')
 #env = gym.make('SawyerPickupEnv-v0')
-env = gym.make('SawyerPickupEnv-v1')
+#env = gym.make('SawyerPickupEnv-v1')
+env = gym.make('SawyerPushNESW-v0')
+#env = gym.make('SawyerPushNIPS-v0')
 
 env = ImageEnv(
     env,
     imsize = imsize,
-    init_camera=sawyer_pick_and_place_camera_slanted_angle,
+    init_camera=sawyer_init_camera_zoomed_in,
     transpose=True,
     normalize=True,
 
@@ -23,13 +25,13 @@ env = ImageEnv(
 i = 0
 
 
-for j in range(0, 20):
+for j in range(0, 5):
     obs = env.reset()
     action = np.array([1,1,1,1])
 
-    obs_img = 255*obs['observation'].reshape(3, 480, 480).transpose()
+    obs_img = 255*obs['observation'].reshape(3, 48, 48).transpose()
     cv2.imwrite('obs' + str(j) + '.png', obs_img)
-    obs_2_img = 255*obs['image_desired_goal'].reshape(3, 480, 480).transpose()
+    obs_2_img = 255*obs['image_desired_goal'].reshape(3, 48, 48).transpose()
     cv2.imwrite('goal' + str(j) + '.png', obs_2_img)
 
 #goal = env.sample_goal()

@@ -42,7 +42,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             fixed_puck_goal=(0.05, 0.6),
             fixed_hand_goal=(-0.05, 0.6),
             # multi-object
-            num_objects=4,
+            num_objects=3,
             filename='sawyer_multiobj.xml',
             object_mass=1,
             # object_meshes=['Bowl', 'GlassBowl', 'LotusBowl01', 'ElephantBowl', 'RuggedBowl'],
@@ -50,9 +50,9 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             obj_classname = None,
             block_height=0.02,
             block_width = 0.02,
-            cylinder_radius = 0.02,
+            cylinder_radius = 0.03,
             finger_sensors=False,
-            maxlen=0.06,
+            maxlen=0.07,
             minlen=0.01,
             preload_obj_dict=None,
 
@@ -61,7 +61,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             object_high=(0.1, 0.7, 0.5),
             action_repeat=1,
             fixed_start=False,
-            goal_moves_one_object=False,
+            goal_moves_one_object=True,
     ):
         self.quick_init(locals())
         self.reward_info = reward_info
@@ -280,7 +280,6 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         return self.model.body_names.index('leftclaw')
 
     def set_object_xy(self, i, pos):
-        print(self.data.qpos)
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
         x = 7 + i * 7

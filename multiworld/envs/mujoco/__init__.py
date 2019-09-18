@@ -278,6 +278,23 @@ def register_mujoco_envs():
     )
 
     register(
+        id='SawyerPushNESW-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_nesw:SawyerPushAndReachXYEasyEnv',
+        tags={
+            'git-commit-hash': 'bede25d',
+            'author': 'ashvin',
+        },
+        kwargs=dict(
+            hide_goal=True,
+            reward_info=dict(
+                type="state_distance",
+            ),
+        )
+
+    )
+
+    register(
         id='SawyerPushNIPSHarder-v0',
         entry_point='multiworld.envs.mujoco.sawyer_xyz'
                     '.sawyer_push_nips:SawyerPushAndReachXYHarderEnv',
