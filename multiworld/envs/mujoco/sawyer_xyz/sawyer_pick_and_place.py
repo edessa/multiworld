@@ -6,7 +6,7 @@ from multiworld.envs.env_util import get_stat_in_paths, \
     create_stats_ordered_dict, get_asset_full_path
 from multiworld.core.multitask_env import MultitaskEnv
 from multiworld.envs.mujoco.sawyer_xyz.base import SawyerXYZEnv
-from multiworld.envs.mujoco.cameras import sawyer_pick_and_place_camera
+from multiworld.envs.mujoco.cameras import sawyer_pick_and_place_camera_slanted_angle
 
 
 class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
@@ -19,7 +19,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             indicator_threshold=0.06,
 
             obj_init_positions=((0, 0.6, 0.02),),
-            random_init=False,
+            random_init=True,
 
             fix_goal=False,
             fixed_goal=(0.15, 0.6, 0.055, -0.15, 0.6),
@@ -129,7 +129,7 @@ class SawyerPickAndPlaceEnv(MultitaskEnv, SawyerXYZEnv):
             self.cur_mode = 'eval'
 
     def viewer_setup(self):
-        sawyer_pick_and_place_camera(self.viewer.cam)
+        sawyer_pick_and_place_camera_slanted_angle(self.viewer.cam)
 
     def step(self, action):
         self.set_xyz_action(action[:3])

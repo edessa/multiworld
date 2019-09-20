@@ -16,9 +16,9 @@ Usage:
 <mujoco>
     <asset>
         <texture type="skybox" builtin="gradient" rgb1=".8 1 1" rgb2=".6 1 1" width="32" height="32"></texture>
-        <texture name="texplane" type="2d" builtin="checker" rgb1="0 0 0" rgb2="1 1 1"
+        <texture name="texplane" type="2d" builtin="checker" rgb1="1 1 1" rgb2="0 0 0"
                  width="64" height="64"/>
-        <material name="matplane" texture="texplane" texrepeat="4 4"/>
+        <material name="matplane" texture="texplane" texrepeat="5 5"/>
         <mesh name="pedestal" file="pedestal.stl" />
         <mesh name="base" file="base.stl" />
         <mesh name="l0" file="l0.stl" />

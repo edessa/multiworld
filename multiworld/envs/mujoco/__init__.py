@@ -474,7 +474,7 @@ def register_mujoco_envs():
             'author': 'steven',
         },
         kwargs=dict(
-            hand_low=(-0.2, 0.55, 0.05),
+            hand_low=(-0.2, 0.45, 0.05),
             hand_high=(0.0, 0.65, 0.2),
             action_scale=0.02,
             hide_goal_markers=True,

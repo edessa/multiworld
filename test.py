@@ -9,14 +9,14 @@ import time
 imsize = 480
 multiworld.register_all_envs()
 #env = gym.make('SawyerPickupMultiobj-v0')
-env = gym.make('SawyerPickupEnv-v0')
+env = gym.make('SawyerPickupWideEnv-v0')
 #env = gym.make('SawyerMultiObj-v0')
 #env = gym.make('SawyerPushNIPS-v0'
 
 env = ImageEnv(
     env,
     imsize = imsize,
-    init_camera=sawyer_pusher_camera_upright_v1,
+    init_camera=sawyer_pick_and_place_camera_slanted_angle,
     transpose=True,
     normalize=True,
 
