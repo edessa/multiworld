@@ -67,7 +67,7 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
 
     loaded_meshes = {}
 
-    all_colors = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0.5], [0.5, 0, 0.5], [0, 0.5, 0.5], [1, 0, 0], [0, 0.5, 0]])
+    all_colors = np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0.5], [0.5, 0, 0.5], [0, 0.5, 0.5], [1, 0, 0], [0, 0.5, 0]])
 
     for i in range(num_objects):
         if load_dict_list == None:

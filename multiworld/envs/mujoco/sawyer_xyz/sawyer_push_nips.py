@@ -14,7 +14,7 @@ from multiworld.envs.mujoco.mujoco_env import MujocoEnv
 import copy
 
 from multiworld.core.multitask_env import MultitaskEnv
-
+import random
 
 class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
     INIT_HAND_POS = np.array([0, 0.4, 0.02])
@@ -25,7 +25,7 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             frame_skip=50,
             pos_action_scale=2. / 100,
             randomize_goals=True,
-            hide_goal=False,
+            hide_goal=True,
             init_block_low=(-0.05, 0.55),
             init_block_high=(0.05, 0.65),
             puck_goal_low=(-0.05, 0.55),
@@ -37,6 +37,9 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             mocap_low=(-0.1, 0.5, 0.0),
             mocap_high=(0.1, 0.7, 0.5),
             force_puck_in_goal_space=False,
+            num_objs = 3,
+            colors=np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [0, 0, 0.5, 1], \
+             [0.5, 0, 0.5, 1], [0, 0.5, 0.5, 1], [1, 0, 0, 1], [0, 0.5, 0, 1]])
     ):
         self.quick_init(locals())
         self.reward_info = reward_info
@@ -55,6 +58,9 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.mocap_low = np.array(mocap_low)
         self.mocap_high = np.array(mocap_high)
         self.force_puck_in_goal_space = force_puck_in_goal_space
+
+        self.num_objs = num_objs
+        self.colors = colors
 
         self._goal_xyxy = self.sample_goal_xyxy()
         # MultitaskEnv.__init__(self, distance_metric_order=2)
@@ -295,6 +301,9 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         )
 
     def reset(self):
+        idx = random.randint(0, self.num_objs-1)
+    #    self.model.geom_rgba[len(self.model.geom_rgba) - 1] = self.colors[idx]
+        self.model.geom_rgba[len(self.model.geom_rgba) - 3] = self.colors[idx]
         velocities = self.data.qvel.copy()
         angles = np.array(self.init_angles)
         self.set_state(angles.flatten(), velocities.flatten())
