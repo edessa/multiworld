@@ -18,6 +18,8 @@ from multiworld.core.multitask_env import MultitaskEnv
 from multiworld.envs.mujoco.util.create_xml import create_object_xml, create_root_xml, clean_xml
 import multiworld
 
+import random
+
 BASE_DIR = '/'.join(str.split(multiworld.__file__, '/')[:-2])
 asset_base_path = BASE_DIR + '/multiworld/envs/assets/multi_object_sawyer_xyz/'
 
@@ -42,7 +44,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             fixed_puck_goal=(0.05, 0.6),
             fixed_hand_goal=(-0.05, 0.6),
             # multi-object
-            num_objects=3,
+            num_objects=2,
             filename='sawyer_multiobj.xml',
             object_mass=1,
             # object_meshes=['Bowl', 'GlassBowl', 'LotusBowl01', 'ElephantBowl', 'RuggedBowl'],
@@ -50,15 +52,9 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             obj_classname = None,
             block_height=0.02,
             block_width = 0.02,
-<<<<<<< HEAD
-            cylinder_radius = 0.03,
-            finger_sensors=False,
-            maxlen=0.07,
-=======
             cylinder_radius = 0.04,
             finger_sensors=False,
-            maxlen=0.085,
->>>>>>> b1670b556462cebae3829756ea0e737aa9537619
+            maxlen=0.07,
             minlen=0.01,
             preload_obj_dict=None,
 
@@ -67,7 +63,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             object_high=(0.1, 0.7, 0.5),
             action_repeat=1,
             fixed_start=False,
-            goal_moves_one_object=True,
+            goal_moves_one_object=False,
     ):
         self.quick_init(locals())
         self.reward_info = reward_info
@@ -320,9 +316,10 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         )
 
     def set_initial_object_positions(self):
+        init_start = np.array([[0, 0.6], [-0.1, 0.6], [0.1, 0.6]])
         if self.fixed_start: # set object to middle of workspace always
             for i in range(self.num_objects):
-                self.set_object_xy(i, np.array([0, 0.6]))
+                self.set_object_xy(i, init_start[i])
         else: # set object to middle of workspace always
             while True:
                 pos = [self.INIT_HAND_POS[:2], ]
@@ -452,8 +449,34 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
 
 
             else:
-                hand = np.random.uniform(self.hand_goal_low, self.hand_goal_high)
-                puck = np.concatenate([np.random.uniform(self.puck_goal_low, self.puck_goal_high) for i in range(self.num_objects)])
+                while True:
+                    hand = np.random.uniform(self.hand_goal_low, self.hand_goal_high)
+                    bs = []
+                    for i in range(self.num_objects):
+                        b = self.get_object_pos(i)[:2]
+                        bs.append(b)
+                #    print(self.num_objects)
+                    for i in range(self.num_objects): #re-arrange all other+obj positions to make sure no touching
+                #        [x, y] = self.get_object_pos(i)[:2]
+                #        x_1 = np.random.uniform(x - 0.06, x - 0.04)
+                #        x_2 = np.random.uniform(x + 0.04, x + 0.06)
+                #        y_1 = np.random.uniform(y - 0.06, y - 0.04)
+                #        y_2 = np.random.uniform(y + 0.04, y + 0.06)
+                #        x = [x_1, x_2][random.randint(0, 1)]
+                #        y = [y_1, y_2][random.randint(0, 1)]
+                #        r = np.array([x, y])
+                        r = np.random.uniform(self.get_object_pos(i)[:2] - [0.06, 0.06], self.get_object_pos(i)[:2] + [0.06, 0.06])
+                        bs[i] = r
+                    touching = []
+                    for i in range(self.num_objects):
+                        for j in range(i):
+                            t = np.linalg.norm(bs[i] - bs[j]) <= self.maxlen
+                            touching.append(t)
+                    if not any(touching):
+                        break
+
+                puck = np.concatenate(bs)
+
         else:
             hand = self.fixed_hand_goal.copy()
             puck = self.fixed_puck_goal.copy()

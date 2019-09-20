@@ -129,6 +129,9 @@ class ImageEnv(ProxyEnv, MultitaskEnv):
         info['image_dist'] = image_dist
         info['image_success'] = image_success
 
+    def set_env(self, env):
+        self.wrapped_env = env
+
     def reset(self):
         obs = self.wrapped_env.reset()
         if self.num_goals_presampled > 0:

@@ -18,6 +18,15 @@ def create_sawyer_camera_init(
 
     return init
 
+def arena_camera(camera):
+    camera.trackbodyid = 0
+    camera.lookat[0] = 0
+    camera.lookat[1] = 1.0
+    camera.lookat[2] = 0.5
+    camera.distance = 0.3
+    camera.elevation = -45
+    camera.azimuth = 270
+    camera.trackbodyid = -1
 
 def init_sawyer_camera_v1(camera):
     """
