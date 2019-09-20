@@ -36,8 +36,8 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             puck_goal_high=(0.1, 0.7),
             hand_goal_low=(-0.1, 0.5),
             hand_goal_high=(0.1, 0.7),
-            mocap_low=(-0.15, 0.45, 0.0),
-            mocap_high=(0.15, 0.75, 0.5),
+            mocap_low=(-0.12, 0.48, 0.0),
+            mocap_high=(0.12, 0.72, 0.4),
             # unused
             init_block_low=(-0.05, 0.55),
             init_block_high=(0.05, 0.65),
@@ -54,7 +54,11 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             block_width = 0.02,
             cylinder_radius = 0.04,
             finger_sensors=False,
+<<<<<<< HEAD
             maxlen=0.07,
+=======
+            maxlen=0.08,
+>>>>>>> 0bc72dabc49653a5afb00e254cef2febb4e93b13
             minlen=0.01,
             preload_obj_dict=None,
 
@@ -457,6 +461,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
                         bs.append(b)
                 #    print(self.num_objects)
                     for i in range(self.num_objects): #re-arrange all other+obj positions to make sure no touching
+<<<<<<< HEAD
                 #        [x, y] = self.get_object_pos(i)[:2]
                 #        x_1 = np.random.uniform(x - 0.06, x - 0.04)
                 #        x_2 = np.random.uniform(x + 0.04, x + 0.06)
@@ -465,6 +470,16 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
                 #        x = [x_1, x_2][random.randint(0, 1)]
                 #        y = [y_1, y_2][random.randint(0, 1)]
                 #        r = np.array([x, y])
+=======
+   #                     [x, y] = self.get_object_pos(i)[:2]
+    #                    x_1 = np.random.uniform(x - 0.06, x - 0.04)
+     #                   x_2 = np.random.uniform(x + 0.04, x + 0.06)
+      #                  y_1 = np.random.uniform(y - 0.06, y - 0.04)
+      #                   y_2 = np.random.uniform(y + 0.04, y + 0.06)
+        #                 x = [x_1, x_2][random.randint(0, 1)]
+        #                 y = [y_1, y_2][random.randint(0, 1)]
+       #                  r = np.array([x, y])
+>>>>>>> 0bc72dabc49653a5afb00e254cef2febb4e93b13
                         r = np.random.uniform(self.get_object_pos(i)[:2] - [0.06, 0.06], self.get_object_pos(i)[:2] + [0.06, 0.06])
                         bs[i] = r
                     touching = []

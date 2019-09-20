@@ -37,7 +37,11 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             mocap_low=(-0.1, 0.5, 0.0),
             mocap_high=(0.1, 0.7, 0.5),
             force_puck_in_goal_space=False,
+<<<<<<< HEAD
             num_objs = 1,
+=======
+            num_objs = 3,
+>>>>>>> 0bc72dabc49653a5afb00e254cef2febb4e93b13
             colors=np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [0, 0, 0.5, 1], \
              [0.5, 0, 0.5, 1], [0, 0.5, 0.5, 1], [1, 0, 0, 1], [0, 0.5, 0, 1]])
     ):
