@@ -549,6 +549,18 @@ def register_mujoco_envs():
     )
 
     register(
+        id='SawyerTwoObj-v0',
+        entry_point='multiworld.envs.mujoco.sawyer_xyz'
+                    '.sawyer_push_multiobj_two_pucks:SawyerTwoObjectEnv',
+        tags={
+            'git-commit-hash': '8bfd74b40f983e15026981344323b8e9539b4b21',
+            'author': 'eadom',
+        },
+        kwargs=dict(
+        )
+    )
+
+    register(
         id='SawyerPushNESW-v0',
         entry_point='multiworld.envs.mujoco.sawyer_xyz'
                     '.sawyer_push_nesw:SawyerPushAndReachXYEasyEnv',

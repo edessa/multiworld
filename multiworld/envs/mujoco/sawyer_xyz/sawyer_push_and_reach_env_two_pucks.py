@@ -448,5 +448,5 @@ class SawyerPushAndReachXYDoublePuckEnv(SawyerPushAndReachXYZDoublePuckEnv):
 if __name__ == "__main__":
     env = SawyerPushAndReachXYZDoublePuckEnv()
     while True:
-    #    env.render()
+        env.render()
         env.reset()

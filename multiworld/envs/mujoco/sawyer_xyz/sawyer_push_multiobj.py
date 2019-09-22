@@ -32,19 +32,19 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             frame_skip=50,
             pos_action_scale=2. / 100,
             randomize_goals=True,
-            puck_goal_low=(-0.1, 0.5),
-            puck_goal_high=(0.1, 0.7),
-            hand_goal_low=(-0.1, 0.5),
-            hand_goal_high=(0.1, 0.7),
-            mocap_low=(-0.12, 0.48, 0.0),
-            mocap_high=(0.12, 0.72, 0.4),
+            puck_goal_low=(-0.1, 0.55),
+            puck_goal_high=(0.05, 0.65),
+            hand_goal_low=(-0.1, 0.55),
+            hand_goal_high=(0.05, 0.65),
+            mocap_low=(-0.11, 0.54, 0.0),
+            mocap_high=(0.06, 0.66, 0.4),
             # unused
             init_block_low=(-0.05, 0.55),
             init_block_high=(0.05, 0.65),
             fixed_puck_goal=(0.05, 0.6),
             fixed_hand_goal=(-0.05, 0.6),
             # multi-object
-            num_objects=2,
+            num_objects=3,
             filename='sawyer_multiobj.xml',
             object_mass=1,
             # object_meshes=['Bowl', 'GlassBowl', 'LotusBowl01', 'ElephantBowl', 'RuggedBowl'],
@@ -62,7 +62,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             object_low=(-0.1, 0.5, 0.0),
             object_high=(0.1, 0.7, 0.5),
             action_repeat=1,
-            fixed_start=False,
+            fixed_start=True,
             goal_moves_one_object=False,
     ):
         self.quick_init(locals())
@@ -316,10 +316,22 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         )
 
     def set_initial_object_positions(self):
-        init_start = np.array([[0, 0.6], [-0.1, 0.6], [0.1, 0.6]])
+        init_start = np.array([[-0.02, 0.6], [-0.1, 0.6], [0.05, 0.6]])
         if self.fixed_start: # set object to middle of workspace always
+            while True:
+                bs = [init_start[0], init_start[1], init_start[2]]
+                for i in range(self.num_objects): #re-arrange all other+obj positions to make sure no touching
+                    r = np.random.uniform(init_start[i][:2] - [0.03, 0.03], init_start[i][:2] + [0.03, 0.03])
+                    bs[i] = r
+                touching = []
+                for i in range(self.num_objects):
+                    for j in range(i):
+                        t = np.linalg.norm(bs[i] - bs[j]) <= self.maxlen
+                        touching.append(t)
+                if not any(touching):
+                    break
             for i in range(self.num_objects):
-                self.set_object_xy(i, init_start[i])
+                self.set_object_xy(i, bs[i])
         else: # set object to middle of workspace always
             while True:
                 pos = [self.INIT_HAND_POS[:2], ]
@@ -436,7 +448,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
                 r = np.random.randint(self.num_objects) # object to move
                 pos = bs + [self.INIT_HAND_POS[:2], ]
                 while True:
-                    bs[r] = np.random.uniform(bs[r] - [0.06, 0.06], bs[r] + [0.06, 0.06])
+                    bs[r] = np.random.uniform(bs[r] - [0.03, 0.03], bs[r] + [0.03, 0.03])
                     touching = []
                     for i in range(self.num_objects + 1):
                         if i != r:
@@ -607,6 +619,12 @@ class SawyerTwoObjectEnv(SawyerMultiobjectEnv):
         # set_state resets the goal xy, so we need to explicit set it again
         self.state_goal = self.sample_goal_for_rollout()
 
+        all_colors = np.array([[1, 0, 0.5, 1], [1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 1, 1]])
+        np.random.shuffle(all_colors)
+        print(all_colors)
+        for i in range(0, len(all_colors)):
+            self.model.geom_rgba[i+1] = all_colors[i]
+            
         # explicitly set starting location of two blocks
         self.set_object_xy(0, np.array([0.05, 0.6]))
         self.set_object_xy(1, np.array([-0.05, 0.6]))
