@@ -261,9 +261,9 @@
 
     </worldbody>
 
-    <!--begin_auto_replace -->
-        <include file="objects.xml"/>
-    <!--end_auto_replace -->
+        <!--begin auto replaced section -->
+        <include file="auto_gen_objects21762.xml"/>
+        <!--end auto replaced section -->
 
     <actuator>
         <motor joint="right_j0" ctrlrange="-100.0 100.0" ctrllimited="false"/>

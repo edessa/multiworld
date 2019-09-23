@@ -58,13 +58,11 @@
               <!--rgba=".6 .6 .5 1"-->
               <!--contype="15"-->
               <!--conaffinity="15" />-->
-
-<!--
       <geom name="quart1" type="plane" pos="0 0.5 0.00001" size="0.4 0.1 0.001"
             rgba="0.5 0.5 0.5 1" contype="15" conaffinity="15" />
       <geom name="quart2" type="plane" pos="0 0.7 0.00001" size="0.4 0.1 0.001"
             rgba="1 1 1 1" contype="15" conaffinity="15" />
--->
+
 <!--      <geom name="quart1" type="plane" pos="-0.2 0.5 0.00001" size="0.2 0.1 0.25"
             rgba="1 0 1 1" contype="15" conaffinity="15" />
       <geom name="quart2" type="plane" pos="0.2 0.5 0.00001" size="0.2 0.1 0.25"
@@ -261,9 +259,9 @@
 
     </worldbody>
 
-    <!--begin_auto_replace -->
-        <include file="objects.xml"/>
-    <!--end_auto_replace -->
+        <!--begin auto replaced section -->
+        <include file="auto_gen_objects7501.xml"/>
+        <!--end auto replaced section -->
 
     <actuator>
         <motor joint="right_j0" ctrlrange="-100.0 100.0" ctrllimited="false"/>

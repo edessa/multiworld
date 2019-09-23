@@ -10,7 +10,7 @@ imsize = 480
 multiworld.register_all_envs()
 #env = gym.make('SawyerPickupMultiobj-v0')
 #env = gym.make('SawyerPickupWideEnv-v0')
-env = gym.make('SawyerTwoObj-v0')
+env = gym.make('SawyerMultiObj-v0')
 #env = gym.make('SawyerPushNIPS-v0'
 
 env = ImageEnv(

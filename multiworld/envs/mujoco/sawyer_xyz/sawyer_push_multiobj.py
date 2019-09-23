@@ -33,11 +33,12 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             pos_action_scale=2. / 100,
             randomize_goals=True,
             puck_goal_low=(-0.1, 0.55),
-            puck_goal_high=(0.05, 0.65),
+            puck_goal_high=(0.1, 0.65),
             hand_goal_low=(-0.1, 0.55),
-            hand_goal_high=(0.05, 0.65),
-            mocap_low=(-0.11, 0.54, 0.0),
-            mocap_high=(0.06, 0.66, 0.4),
+            hand_goal_high=(0.1, 0.65),
+            mocap_low=(-0.1, 0.55, 0.0),
+            mocap_high=(0.1, 0.65, 0.4),
+            range_dist = 0.03,
             # unused
             init_block_low=(-0.05, 0.55),
             init_block_high=(0.05, 0.65),
@@ -52,7 +53,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             obj_classname = None,
             block_height=0.02,
             block_width = 0.02,
-            cylinder_radius = 0.04,
+            cylinder_radius = 0.05,
             finger_sensors=False,
             maxlen=0.08,
             minlen=0.01,
@@ -70,6 +71,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.randomize_goals = randomize_goals
         self._pos_action_scale = pos_action_scale
         self.reset_to_initial_position = reset_to_initial_position
+        self.range_dist = range_dist
 
         self.init_block_low = np.array(init_block_low)
         self.init_block_high = np.array(init_block_high)
@@ -321,7 +323,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             while True:
                 bs = [init_start[0], init_start[1], init_start[2]]
                 for i in range(self.num_objects): #re-arrange all other+obj positions to make sure no touching
-                    r = np.random.uniform(init_start[i][:2] - [0.03, 0.03], init_start[i][:2] + [0.03, 0.03])
+                    r = np.random.uniform(init_start[i][:2] - [self.range_dist, self.range_dist], init_start[i][:2] + [self.range_dist, self.range_dist])
                     bs[i] = r
                 touching = []
                 for i in range(self.num_objects):
@@ -448,7 +450,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
                 r = np.random.randint(self.num_objects) # object to move
                 pos = bs + [self.INIT_HAND_POS[:2], ]
                 while True:
-                    bs[r] = np.random.uniform(bs[r] - [0.03, 0.03], bs[r] + [0.03, 0.03])
+                    bs[r] = np.random.uniform(bs[r] - [self.range_dist, self.range_dist], bs[r] + [self.range_dist, self.range_dist])
                     touching = []
                     for i in range(self.num_objects + 1):
                         if i != r:
@@ -621,10 +623,9 @@ class SawyerTwoObjectEnv(SawyerMultiobjectEnv):
 
         all_colors = np.array([[1, 0, 0.5, 1], [1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 1, 1]])
         np.random.shuffle(all_colors)
-        print(all_colors)
         for i in range(0, len(all_colors)):
             self.model.geom_rgba[i+1] = all_colors[i]
-            
+
         # explicitly set starting location of two blocks
         self.set_object_xy(0, np.array([0.05, 0.6]))
         self.set_object_xy(1, np.array([-0.05, 0.6]))
