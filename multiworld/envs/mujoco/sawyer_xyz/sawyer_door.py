@@ -115,16 +115,12 @@ class SawyerDoorEnv(
         )
 
     def _get_info(self):
-        angle_diff = np.abs(self.get_door_angle() - self._state_goal[-1])[0]
+        angle_diff = np.abs(self.get_door_angle())
         hand_dist = np.linalg.norm(self.get_endeff_pos() - self._state_goal[:3])
         info = dict(
             angle_difference=angle_diff,
-            angle_success=(angle_diff < self.indicator_threshold[0]).astype(
-                float),
-            hand_distance=hand_dist,
-            hand_success=(hand_dist < self.indicator_threshold[1]).astype(
-                float),
-            total_distance=angle_diff + hand_dist
+            angle_success=(angle_diff > 0.1).astype(
+                float)
         )
         return info
 
@@ -136,27 +132,8 @@ class SawyerDoorEnv(
         return self.model.body_names.index('leftclaw')
 
     def compute_rewards(self, actions, obs):
-        achieved_goals = obs['state_achieved_goal']
-        desired_goals = obs['state_desired_goal']
-        actual_angle = achieved_goals[:, -1]
-        goal_angle = desired_goals[:, -1]
-        pos = achieved_goals[:, :3]
-        goal_pos = desired_goals[:, :3]
-        angle_diff = np.abs(actual_angle - goal_angle)
-        pos_dist = np.linalg.norm(pos - goal_pos, axis=1)
-        if self.reward_type == 'angle_diff_and_hand_distance':
-            r = - (
-                angle_diff * self.target_angle_scale
-                + pos_dist * self.target_pos_scale
-            )
-        elif self.reward_type == 'angle_difference':
-            r = - angle_diff * self.target_angle_scale
-
-        elif self.reward_type == 'hand_success':
-            r = -(angle_diff > self.indicator_threshold[0] or pos_dist >
-                  self.indicator_threshold[1]).astype(float)
-        else:
-            raise NotImplementedError("Invalid/no reward type.")
+        angle_diff = np.abs(self.get_door_angle() - 0)
+        r = np.abs(self.get_door_angle()) * self.target_angle_scale
         return r
 
     def reset_model(self):
@@ -250,16 +227,13 @@ class SawyerDoorEnv(
 
     def set_to_goal(self, goal):
         raise NotImplementedError("Hard to do because what if the hand is in "
-                                  "the door? Use presampled goals.")
+                                  "the door? Use presampled goals. I am watching you...")
 
     def get_diagnostics(self, paths, prefix=''):
         statistics = OrderedDict()
         for stat_name in [
             'angle_difference',
             'angle_success',
-            'hand_distance',
-            'hand_success',
-            'total_distance',
         ]:
             stat_name = stat_name
             stat = get_stat_in_paths(paths, 'env_infos', stat_name)
