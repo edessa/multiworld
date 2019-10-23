@@ -173,7 +173,7 @@ def sawyer_pusher_camera_upright_v2(camera):
 
 
 def sawyer_pusher_camera_upright_v3(camera):
-    camera.distance = .275
+    camera.distance = .475
     camera.lookat[0] = 0
     camera.lookat[1] = 0.85
     camera.lookat[2] = 0.45
@@ -183,7 +183,7 @@ def sawyer_pusher_camera_upright_v3(camera):
 
 
 def sawyer_pusher_camera_top_down(camera):
-    camera.trackbodyid = 0
+    #camera.trackbodyid = 0
     cam_dist = 0.1
     rotation_angle = 0
     cam_pos = np.array([0, 0.6, .9, cam_dist, -90, rotation_angle])
@@ -205,9 +205,9 @@ def sawyer_init_camera_zoomed_in(camera):
     #cam_pos = np.array([0, 0.5, 0.2, cam_dist, -45, rotation_angle])
 
     # 3rd person view
-    cam_dist = 0.3
+    cam_dist = 0.5
     rotation_angle = 270
-    cam_pos = np.array([0, 0.85, 0.2, cam_dist, -45, rotation_angle])
+    cam_pos = np.array([0, 0.95, 0.2, cam_dist, -45, rotation_angle])
 
     # top down view
     #cam_dist = 0.2

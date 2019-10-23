@@ -11,6 +11,7 @@ from multiworld.core.wrapper_env import ProxyEnv
 from multiworld.envs.env_util import concatenate_box_spaces
 from multiworld.envs.env_util import get_stat_in_paths, create_stats_ordered_dict
 
+import time
 
 class ImageEnv(ProxyEnv, MultitaskEnv):
     def __init__(
@@ -112,13 +113,34 @@ class ImageEnv(ProxyEnv, MultitaskEnv):
         else:
             self.num_goals_presampled = presampled_goals[random.choice(list(presampled_goals))].shape[0]
         self._last_image = None
+        self.i = 0
+        self.episode_count = 0
+        self.step_count = 0
 
     def step(self, action):
+        orig_img = self._get_flat_img()
         obs, reward, done, info = self.wrapped_env.step(action)
         new_obs = self._update_obs(obs)
         if self.recompute_reward:
             reward = self.compute_reward(action, new_obs)
         self._update_info(info, obs)
+        #    obs_img = 255*obs['observation'].reshape(3, 480, 480).transpose()
+        #    cv2.imwrite('obs' + str(j) + '.png', obs_img[...,::-1])
+
+        dir_no = 1
+        if info['travel_distance'] > 0.005:
+            cv2.imwrite('/home/lab/Interaction_Series/' + str(dir_no) + '/' + 'episode_' + str(self.episode_count) + '_' + \
+            str(self.step_count) + '_' + str(self.i) + '_0.png', 255*orig_img.reshape(3, 84, 84).transpose()[...,::-1])
+
+            cv2.imwrite('/home/lab/Interaction_Series/' + str(dir_no) + '/' + 'episode_' + str(self.episode_count) + '_' + \
+            str(self.step_count) + '_' + str(self.i) + '_1.png', 255*obs['observation'].reshape(3, 84, 84).transpose()[...,::-1])
+
+            np.save('/home/lab/Interaction_Series/' + str(dir_no) + '/' + 'episode_' + str(self.episode_count) + '_' + str(self.step_count) + '_' +
+            str(self.i) + '.npy', np.array([action, self.sim.model.body_mass[29], self.sim.model.body_mass[30], \
+            self.sim.model.geom_friction[34], self.sim.model.geom_friction[35]]))
+
+            self.i += 1
+        self.step_count += 1
         return new_obs, reward, done, info
 
     def _update_info(self, info, obs):
@@ -145,7 +167,8 @@ class ImageEnv(ProxyEnv, MultitaskEnv):
             self.wrapped_env.set_to_goal(self.wrapped_env.get_goal())
             self._img_goal = self._get_flat_img()
             self.wrapped_env.set_env_state(env_state)
-
+        self.step_count = 0
+        self.episode_count += 1
         return self._update_obs(obs)
 
     def _get_obs(self):

@@ -14,6 +14,7 @@ from multiworld.envs.env_util import (
 from multiworld.core.multitask_env import MultitaskEnv
 from multiworld.envs.mujoco.sawyer_xyz.base import SawyerXYZEnv
 
+import random
 
 class SawyerDoorEnv(
     SawyerXYZEnv,
@@ -32,8 +33,8 @@ class SawyerDoorEnv(
         fixed_goal=(0, .45, .12, -.25),
         reset_free=False,
         fixed_hand_z=0.12,
-        hand_low=(-0.25, 0.3, .12),
-        hand_high=(0.25, 0.6, .12),
+        hand_low=(-0.25, 0.3, 0.08),
+        hand_high=(0.25, 0.6, 0.15),
         target_pos_scale=1,
         target_angle_scale=1,
         min_angle=-1.5708,
@@ -51,16 +52,17 @@ class SawyerDoorEnv(
             **sawyer_xyz_kwargs
         )
         MultitaskEnv.__init__(self)
-
+        print("Made change to door")
         self.reward_type = reward_type
         self.indicator_threshold = indicator_threshold
+        self.info_sizes = {'angle_difference': 1}
 
         self.fix_goal = fix_goal
         self.fixed_goal = np.array(fixed_goal)
         self._state_goal = None
         self.fixed_hand_z = fixed_hand_z
 
-        self.action_space = Box(np.array([-1, -1]), np.array([1, 1]), dtype=np.float32)
+        self.action_space = Box(np.array([-1, -1, -1]), np.array([1, 1, 1]), dtype=np.float32)
         self.state_space = Box(
             np.concatenate((hand_low, [min_angle])),
             np.concatenate((hand_high, [max_angle])),
@@ -91,7 +93,7 @@ class SawyerDoorEnv(
         self.reset()
 
     def step(self, action):
-        self.set_xy_action(action[:2], self.fixed_hand_z)
+        self.set_xyz_action(action)
         u = np.zeros(8)
         u[7] = 1
         self.do_simulation(u, self.frame_skip)
@@ -115,12 +117,9 @@ class SawyerDoorEnv(
         )
 
     def _get_info(self):
-        angle_diff = np.abs(self.get_door_angle())
-        hand_dist = np.linalg.norm(self.get_endeff_pos() - self._state_goal[:3])
+        angle_diff = np.abs(self.get_door_angle() - self.init_angle)[0]
         info = dict(
-            angle_difference=angle_diff,
-            angle_success=(angle_diff > 0.1).astype(
-                float)
+            angle_difference=angle_diff
         )
         return info
 
@@ -132,9 +131,9 @@ class SawyerDoorEnv(
         return self.model.body_names.index('leftclaw')
 
     def compute_rewards(self, actions, obs):
-        angle_diff = np.abs(self.get_door_angle() - 0)
-        r = np.abs(self.get_door_angle()) * self.target_angle_scale
-        return r
+        angle_diff = np.abs(self.get_door_angle() - self.init_angle)
+       # r = self.get_door_angle() * self.target_angle_scale
+        return angle_diff
 
     def reset_model(self):
         if not self.reset_free:
@@ -147,9 +146,21 @@ class SawyerDoorEnv(
 
     def reset(self):
         # super.reset() does not account for reset-free logic.
+        params = random.randint(0, 5)
+        axis = [0, 0, 0]
+        axis[params % 3] = 1
+
+        if params < 3:
+            self.model.jnt_type[8] = 2
+            self.model.jnt_axis[8] = axis
+        else:
+            self.model.jnt_type[8] = 3
+            self.model.jnt_axis[8] = axis
+
         ob = self.reset_model()
         if self.viewer is not None:
             self.viewer_setup()
+        self.init_angle = self.get_door_angle()
         return ob
 
     def _reset_hand(self):
@@ -227,27 +238,30 @@ class SawyerDoorEnv(
 
     def set_to_goal(self, goal):
         raise NotImplementedError("Hard to do because what if the hand is in "
-                                  "the door? Use presampled goals. I am watching you...")
+                                  "the door? Use presampled goals.")
 
     def get_diagnostics(self, paths, prefix=''):
-        statistics = OrderedDict()
-        for stat_name in [
-            'angle_difference',
-            'angle_success',
-        ]:
-            stat_name = stat_name
-            stat = get_stat_in_paths(paths, 'env_infos', stat_name)
-            statistics.update(create_stats_ordered_dict(
-                '%s%s' % (prefix, stat_name),
-                stat,
-                always_show_all_stats=True,
-            ))
-            statistics.update(create_stats_ordered_dict(
-                'Final %s%s' % (prefix, stat_name),
-                [s[-1] for s in stat],
-                always_show_all_stats=True,
-            ))
-        return statistics
+        if paths:
+            statistics = OrderedDict()
+            for stat_name in [
+                'angle_difference',
+            ]:
+                stat_name = stat_name
+                stat = get_stat_in_paths(paths, 'env_infos', stat_name)
+                statistics.update(create_stats_ordered_dict(
+                    '%s%s' % (prefix, stat_name),
+                    stat,
+                    always_show_all_stats=True,
+                ))
+                statistics.update(create_stats_ordered_dict(
+                    'Final %s%s' % (prefix, stat_name),
+                    [s[-1] for s in stat],
+                    always_show_all_stats=True,
+                ))
+            return statistics
+        else:
+            return {}
+
 
     def get_env_state(self):
         base_state = super().get_env_state()

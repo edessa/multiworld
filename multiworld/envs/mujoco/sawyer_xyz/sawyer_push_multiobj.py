@@ -32,22 +32,22 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             frame_skip=50,
             pos_action_scale=2. / 100,
             randomize_goals=True,
-            puck_goal_low=(-0.1, 0.55),
-            puck_goal_high=(0.1, 0.65),
-            hand_goal_low=(-0.1, 0.55),
-            hand_goal_high=(0.1, 0.65),
-            mocap_low=(-0.1, 0.55, 0.0),
-            mocap_high=(0.1, 0.65, 0.4),
-            range_dist = 0.03,
+            puck_goal_low=(-0.1, 0.5),
+            puck_goal_high=(0.1, 0.7),
+            hand_goal_low=(-0.1, 0.5),
+            hand_goal_high=(0.1, 0.7),
+            mocap_low=(-0.1, 0.5, 0.0),
+            mocap_high=(0.1, 0.7, 0.5),
             # unused
             init_block_low=(-0.05, 0.55),
             init_block_high=(0.05, 0.65),
             fixed_puck_goal=(0.05, 0.6),
             fixed_hand_goal=(-0.05, 0.6),
             # multi-object
-            num_objects=3,
+            num_objects=1,
             filename='sawyer_multiobj.xml',
-            object_mass=1,
+            object_mass=[0.9, 0.1],
+            friction_params = [0.09, 0.009],
             # object_meshes=['Bowl', 'GlassBowl', 'LotusBowl01', 'ElephantBowl', 'RuggedBowl'],
             object_meshes=None,
             obj_classname = None,
@@ -55,7 +55,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             block_width = 0.02,
             cylinder_radius = 0.05,
             finger_sensors=False,
-            maxlen=0.08,
+            maxlen=0.06,
             minlen=0.01,
             preload_obj_dict=None,
 
@@ -71,7 +71,6 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.randomize_goals = randomize_goals
         self._pos_action_scale = pos_action_scale
         self.reset_to_initial_position = reset_to_initial_position
-        self.range_dist = range_dist
 
         self.init_block_low = np.array(init_block_low)
         self.init_block_high = np.array(init_block_high)
@@ -94,14 +93,14 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
 
         # Generate XML
         base_filename = asset_base_path + filename
-        friction_params = (0.1, 0.1, 0.02)
+        friction_params = [0.09, 0.009]
         self.obj_stat_prop = create_object_xml(base_filename, num_objects, object_mass,
                                                friction_params, object_meshes, finger_sensors,
                                                maxlen, minlen, preload_obj_dict, obj_classname,
                                                block_height, block_width, cylinder_radius)
         gen_xml = create_root_xml(base_filename)
         MujocoEnv.__init__(self, gen_xml, frame_skip=frame_skip)
-    #    clean_xml(gen_xml)
+        clean_xml(gen_xml)
 
         self.state_goal = self.sample_goal_for_rollout()
         # MultitaskEnv.__init__(self, distance_metric_order=2)
@@ -181,6 +180,8 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.viewer.cam.trackbodyid = -1
 
     def step(self, a):
+        init_puck_pos = self.get_object_pos(0)
+
         a = np.clip(a, -1, 1)
         mocap_delta_z = 0.06 - self.data.mocap_pos[0, 2]
         new_mocap_action = np.hstack((
@@ -192,20 +193,22 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             self.mocap_set_action(new_mocap_action[:3] * self._pos_action_scale)
             self.do_simulation(u, self.frame_skip)
 
-        #self.render()
+        # self.render()
 
         qpos = self.data.qpos.flat.copy()
         qvel = self.data.qvel.flat.copy()
-        for i in range(self.num_objects):
-            x = 7 + i * 7
-            y = 10 + i * 7
-            qpos[x:y] = np.clip(qpos[x:y], self.object_low, self.object_high)
-        self.set_state(qpos, qvel)
+    #    for i in range(self.num_objects):
+    #        x = 7 + i * 7
+    #        y = 10 + i * 7
+    #        qpos[x:y] = np.clip(qpos[x:y], self.object_low, self.object_high)
+    #    self.set_state(qpos, qvel)
 
         obs = self._get_obs()
         # reward = self.compute_reward(obs, u, obs, self._goal_xyxy)
         reward = self.compute_reward(a, obs)
         done = False
+        final_puck_pos = self.get_object_pos(0)
+        travel_distance = np.linalg.norm(final_puck_pos - init_puck_pos)
 
         endeff_pos = self.get_endeff_pos()
         hand_distance = np.linalg.norm(
@@ -226,6 +229,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
             touch_distances[touch_name] = touch_distance
         info = dict(
             hand_distance=hand_distance,
+            travel_distance=travel_distance,
             success=float(hand_distance + sum(object_distances.values()) < 0.06),
             **object_distances,
             **touch_distances,
@@ -318,22 +322,9 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         )
 
     def set_initial_object_positions(self):
-        init_start = np.array([[-0.02, 0.6], [-0.1, 0.6], [0.05, 0.6]])
         if self.fixed_start: # set object to middle of workspace always
-            while True:
-                bs = [init_start[0], init_start[1], init_start[2]]
-                for i in range(self.num_objects): #re-arrange all other+obj positions to make sure no touching
-                    r = np.random.uniform(init_start[i][:2] - [self.range_dist, self.range_dist], init_start[i][:2] + [self.range_dist, self.range_dist])
-                    bs[i] = r
-                touching = []
-                for i in range(self.num_objects):
-                    for j in range(i):
-                        t = np.linalg.norm(bs[i] - bs[j]) <= self.maxlen
-                        touching.append(t)
-                if not any(touching):
-                    break
             for i in range(self.num_objects):
-                self.set_object_xy(i, bs[i])
+                self.set_object_xy(i, np.array([0, 0.6]))
         else: # set object to middle of workspace always
             while True:
                 pos = [self.INIT_HAND_POS[:2], ]
@@ -397,6 +388,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
         statistics = OrderedDict()
         for stat_name in [
             'hand_distance',
+            'travel_distance',
             'success',
         ] + [
             "object%d_distance" % i for i in range(self.num_objects)
@@ -450,7 +442,7 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
                 r = np.random.randint(self.num_objects) # object to move
                 pos = bs + [self.INIT_HAND_POS[:2], ]
                 while True:
-                    bs[r] = np.random.uniform(bs[r] - [self.range_dist, self.range_dist], bs[r] + [self.range_dist, self.range_dist])
+                    bs[r] = np.random.uniform(self.puck_goal_low, self.puck_goal_high)
                     touching = []
                     for i in range(self.num_objects + 1):
                         if i != r:
@@ -463,34 +455,8 @@ class SawyerMultiobjectEnv(MujocoEnv, Serializable, MultitaskEnv):
 
 
             else:
-                while True:
-                    hand = np.random.uniform(self.hand_goal_low, self.hand_goal_high)
-                    bs = []
-                    for i in range(self.num_objects):
-                        b = self.get_object_pos(i)[:2]
-                        bs.append(b)
-                #    print(self.num_objects)
-                    for i in range(self.num_objects): #re-arrange all other+obj positions to make sure no touching
-   #                     [x, y] = self.get_object_pos(i)[:2]
-    #                    x_1 = np.random.uniform(x - 0.06, x - 0.04)
-     #                   x_2 = np.random.uniform(x + 0.04, x + 0.06)
-      #                  y_1 = np.random.uniform(y - 0.06, y - 0.04)
-      #                   y_2 = np.random.uniform(y + 0.04, y + 0.06)
-        #                 x = [x_1, x_2][random.randint(0, 1)]
-        #                 y = [y_1, y_2][random.randint(0, 1)]
-       #                  r = np.array([x, y])
-                        r = np.random.uniform(self.get_object_pos(i)[:2] - [0.06, 0.06], self.get_object_pos(i)[:2] + [0.06, 0.06])
-                        bs[i] = r
-                    touching = []
-                    for i in range(self.num_objects):
-                        for j in range(i):
-                            t = np.linalg.norm(bs[i] - bs[j]) <= self.maxlen
-                            touching.append(t)
-                    if not any(touching):
-                        break
-
-                puck = np.concatenate(bs)
-
+                hand = np.random.uniform(self.hand_goal_low, self.hand_goal_high)
+                puck = np.concatenate([np.random.uniform(self.puck_goal_low, self.puck_goal_high) for i in range(self.num_objects)])
         else:
             hand = self.fixed_hand_goal.copy()
             puck = self.fixed_puck_goal.copy()
@@ -550,12 +516,12 @@ class SawyerTwoObjectEnv(SawyerMultiobjectEnv):
     """
     This environment matches exactly the 2-object pushing environment in the RIG paper
     """
-    PUCK1_GOAL_LOW = np.array([0.0, 0.5])
-    PUCK1_GOAL_HIGH = np.array([0.2, 0.7])
-    PUCK2_GOAL_LOW = np.array([-0.2, 0.5])
-    PUCK2_GOAL_HIGH = np.array([0.0, 0.7])
-    HAND_GOAL_LOW = np.array([-0.05, 0.55])
-    HAND_GOAL_HIGH = np.array([0.05, 0.65])
+    PUCK1_GOAL_LOW = np.array([0.0, 0.6])
+    PUCK1_GOAL_HIGH = np.array([0.1, 0.8])
+    PUCK2_GOAL_LOW = np.array([-0.1, 0.6])
+    PUCK2_GOAL_HIGH = np.array([0.0, 0.8])
+    HAND_GOAL_LOW = np.array([-0.05, 0.6])
+    HAND_GOAL_HIGH = np.array([0.05, 0.8])
 
     low = np.hstack((HAND_GOAL_LOW, PUCK1_GOAL_LOW, PUCK2_GOAL_LOW))
     high = np.hstack((HAND_GOAL_HIGH, PUCK1_GOAL_HIGH, PUCK2_GOAL_HIGH))
@@ -567,7 +533,7 @@ class SawyerTwoObjectEnv(SawyerMultiobjectEnv):
         self.quick_init(locals())
         x = 0.2
         y1 = 0.5
-        y2 = 0.7
+        y2 = 0.8
         SawyerMultiobjectEnv.__init__(
             self,
             hand_goal_low = (-x, y1),
@@ -575,8 +541,9 @@ class SawyerTwoObjectEnv(SawyerMultiobjectEnv):
             puck_goal_low = (-x, y1),
             puck_goal_high = (x, y2),
             mocap_low=(-0.1, y1, 0.0),
-            mocap_high=(0.1, y2, 0.5),
-
+            mocap_high=(0.1, y2, 0.15),
+            object_mass=[0.9, 0.5],
+            friction_params = [1, 1],
             num_objects=2,
             preload_obj_dict=[
                 dict(color2=(0.1, 0.1, 0.9)),
@@ -614,21 +581,32 @@ class SawyerTwoObjectEnv(SawyerMultiobjectEnv):
         velocities = self.data.qvel.copy()
         angles = self.data.qpos.copy()
         angles[:7] = np.array(self.init_angles[:7]) # just change robot joints
+        #self.sim.model.geom_friction[0] = np.array([0.001, 0.005, 0.0001])
+        #self.sim.model.geom_friction[34] = np.array([0.002, 0.005, 0.0001])
+
+        #self.sim.model.geom_friction[34] = 0.001
+        #self.sim.model.geom_friction[35] = 0.001
+        self.sim.model.body_mass[29] = random.uniform(0.1, 1)
+        #self.sim.model.body_mass[30] = 1
         self.set_state(angles.flatten(), velocities.flatten())
         for _ in range(10):
             self.data.set_mocap_pos('mocap', self.INIT_HAND_POS)
             self.data.set_mocap_quat('mocap', np.array([1, 0, 1, 0]))
         # set_state resets the goal xy, so we need to explicit set it again
         self.state_goal = self.sample_goal_for_rollout()
-
-        all_colors = np.array([[1, 0, 0.5, 1], [1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 1, 1]])
-        np.random.shuffle(all_colors)
-        for i in range(0, len(all_colors)):
-            self.model.geom_rgba[i+1] = all_colors[i]
-
-        # explicitly set starting location of two blocks
-        self.set_object_xy(0, np.array([0.05, 0.6]))
-        self.set_object_xy(1, np.array([-0.05, 0.6]))
-
         self.reset_mocap_welds()
+
+    #    self.sim.forward()
+    #    self.sim.set_constants()
+        # explicitly set starting location of two blocks
+        self.set_object_xy(0, np.array([0, 0.6]))
+        self.set_object_xy(1, np.array([0, 0.73]))
+        self.do_simulation(None, self.frame_skip)
+        #self.sim.model.geom_friction[35] = np.array([0.002, 0.005, 0.0001])
+
+
+    #    self.sim.model.body_mass[29] = random.uniform(0.01, 0.2)
+    #    self.sim.model.geom_friction[34] = random.uniform(0.0001, 0.001)
+
+
         return self._get_obs()

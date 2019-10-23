@@ -50,9 +50,6 @@
         <camera pos="0 1.2 0.8" euler="-0.8 0 3.1415" name="topview" />
         <!-- <light directional="true" cutoff="40" exponent="10" diffuse=".4 .4 .4" specular=".7 .7 .7" pos="0 0 1.5" dir="0 0 -1"/> -->
 
-        <geom name="tableTop" type="box" pos="0 0.7 -.455" size="0.4 0.5 0.455"
-            rgba=".6 .6 .5 1" contype="15" conaffinity="15" />
-
 
         <!--<geom name="plane"-->
               <!--type="plane"-->
@@ -216,8 +213,12 @@
             <geom conaffinity="0" contype="0" pos="0 0 0" rgba="0.5 0.5 0.5 0" size="0.1 0.02 0.02" type="box"></geom>
         </body>
 
+        <geom name="tableTop" type="box" pos="0 0.7 -.455" size="0.4 0.5 0.455"
+            rgba=".6 .6 .5 1" contype="15" conaffinity="15" friction="0.0001"/>
+
+
         <body name="puck" pos="0 0 0.1">
-            <joint name="puckjoint" type="free" limited='false' damping="0" armature="0" />
+            <joint name="puckjoint" type="free" limited='false' damping="1" armature="0" />
             <!--<joint name="puckjoint-x" type="slide" limited='false' pos="0 0 0"-->
                    <!--axis="1 0 0"-->
                    <!--/>-->
@@ -227,7 +228,7 @@
             <!--<joint name="puckjoint-z" type="slide" limited='false' pos="0 0 0"-->
                    <!--axis="0 0 1"-->
             <!--/>-->
-            <inertial pos="0 0 0" mass=".1" diaginertia="100000 100000 100000"/>
+            <inertial pos="0 0 0" mass=".1" diaginertia="1 1 1"/>
             <!--type="box"-->
             <!--size="0.02 0.02 0.02"-->
             <geom name="puckbox"
@@ -237,6 +238,7 @@
                   rgba="0 .5 1 1"
                   contype="2"
                   conaffinity="4"
+                  friction="0.0001"
             />
             <site name="puck" pos="0 0 0" size="0.01" />
         </body>

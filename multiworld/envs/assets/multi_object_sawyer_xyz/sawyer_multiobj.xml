@@ -1,10 +1,10 @@
 <mujoco model="sawyer">
     <compiler angle="radian" meshdir="../meshes/sawyer/" />
-    <!-- <option gravity="0 0 0" /> -->
     <!-- <option impratio="0.01" /> -->
     <!-- <option collision="predefined" /> -->
     <option integrator="Euler" timestep="0.002" iterations="50"/>
-    <size njmax="2000" nconmax="1000" />
+    <size njmax="500" nconmax="100" />
+
     <asset>
         <mesh name="pedestal" file="pedestal.stl" />
         <mesh name="base" file="base.stl" />
@@ -49,8 +49,9 @@
         <camera pos="0 1.2 0.8" euler="-0.8 0 3.1415" name="topview" />
         <!-- <light directional="true" cutoff="40" exponent="10" diffuse=".4 .4 .4" specular=".7 .7 .7" pos="0 0 1.5" dir="0 0 -1"/> -->
 
-        <geom name="tableTop" type="plane" pos="0 0.6 0" size="0.4 0.2 0.5"
-              rgba=".6 .6 .5 1" contype="15" conaffinity="15" />
+        <geom name="tableTop" type="box" pos="0 0.7 -.455" size="0.4 0.5 0.455"
+            rgba=".6 .6 .5 1" contype="15" conaffinity="15" friction="0.01"/>
+
         <!--<geom name="plane"-->
               <!--type="plane"-->
               <!--pos="0 0.6 0"-->
@@ -58,22 +59,6 @@
               <!--rgba=".6 .6 .5 1"-->
               <!--contype="15"-->
               <!--conaffinity="15" />-->
-
-<!--
-      <geom name="quart1" type="plane" pos="0 0.5 0.00001" size="0.4 0.1 0.001"
-            rgba="0.5 0.5 0.5 1" contype="15" conaffinity="15" />
-      <geom name="quart2" type="plane" pos="0 0.7 0.00001" size="0.4 0.1 0.001"
-            rgba="1 1 1 1" contype="15" conaffinity="15" />
--->
-<!--      <geom name="quart1" type="plane" pos="-0.2 0.5 0.00001" size="0.2 0.1 0.25"
-            rgba="1 0 1 1" contype="15" conaffinity="15" />
-      <geom name="quart2" type="plane" pos="0.2 0.5 0.00001" size="0.2 0.1 0.25"
-            rgba="1 1 0 1" contype="15" conaffinity="15" />
-      <geom name="quart3" type="plane" pos="-0.2 0.7 0.00001" size="0.2 0.1 0.25"
-            rgba="0 1 1 1" contype="15" conaffinity="15" />
-      <geom name="quart4" type="plane" pos="0.2 0.7 0.00001" size="0.2 0.1 0.25"
-            rgba="1 1 1 1" contype="15" conaffinity="15" />
- -->
 
         <body name="base" pos="0 0 0">
             <site name="basesite" pos="0 0 0" size="0.01" />

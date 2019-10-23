@@ -547,7 +547,7 @@ def register_mujoco_envs():
     register(
         id='SawyerMultiObj-v0',
         entry_point='multiworld.envs.mujoco.sawyer_xyz'
-                    '.sawyer_push_multiobj:SawyerMultiobjectEnv',
+                    '.sawyer_push_multiobj:SawyerTwoObjectEnv',
         tags={
             'git-commit-hash': '8bfd74b40f983e15026981344323b8e9539b4b21',
             'author': 'eadom',
@@ -666,7 +666,7 @@ def register_mujoco_envs():
         kwargs=dict(
             force_puck_in_goal_space=False,
             mocap_low=(-0.1, 0.55, 0.0),
-            mocap_high=(0.1, 0.65, 0.5),
+            mocap_high=(0.1, 0.65, 0.1),
             hand_goal_low=(-0.1, 0.55),
             hand_goal_high=(0.1, 0.65),
             puck_goal_low=(-0.15, 0.5),

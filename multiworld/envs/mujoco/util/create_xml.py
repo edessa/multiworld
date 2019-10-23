@@ -62,12 +62,9 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
         ET.SubElement(sensor_frame, "touch", name = "finger2_sensor", site = "finger2_surf")
     else:
         sensor_frame = None
-    f_sliding, f_torsion, f_rolling = friction_params
     world_body = ET.SubElement(root, "worldbody")
 
     loaded_meshes = {}
-
-    all_colors = np.array([[0, 0, 1], [0, 0, 1], [0, 0, 1], [1, 0, 0], [0, 0.5, 0.5], [1, 0, 0], [0, 0.5, 0]])
 
     for i in range(num_objects):
         if load_dict_list == None:
@@ -76,8 +73,6 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
             color1 = dict['color1'] = np.random.uniform(0.3, 1., 3)
             color2 = dict['color2'] = np.random.uniform(0.3, 1., 3)
 
-            color1 = all_colors[i]
-            color2 = all_colors[i]
 
             l1 = dict['l1'] =np.random.uniform(minlen, maxlen)
             l2 = dict['l2'] =np.random.uniform(minlen, maxlen)
@@ -95,7 +90,8 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
         save_dict_list.append(dict)
 
         obj_string = "object{}".format(i)
-        print('using friction=({}, {}, {}), object mass{}'.format(f_sliding, f_torsion, f_rolling, object_mass))
+        mass = object_mass[i]
+        #print('using friction=({}, {}, {}), object mass {}'.format(f_sliding, f_torsion, f_rolling, mass))
 
 
         if object_meshes is not None:
@@ -154,6 +150,7 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
                 ET.SubElement(obj, "joint", type="free", limited='false', damping="0", armature="0")
 
             if use_textures:
+                print("Add friction")
                 assets = ET.SubElement(root, "asset")
 
                 ET.SubElement(assets, "texture", builtin="flat", name="tex_" + obj_string, height="32", width="32", rgb1="1 1 1", type="cube")
@@ -165,11 +162,13 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
                               contype="0", conaffinity="0", material="mat_" + obj_string)
             else:
                 #visual mesh
+                print("Adding friction")
                 ET.SubElement(obj, "geom", type="mesh", mesh = chosen_mesh + "_mesh",
                               rgba="{} {} {} 1".format(color1[0], color1[1], color1[2]), mass="{}".format(mass_per_elem),
-                              contype="0", conaffinity="0")
+                              contype="0", conaffinity="0", friction="{} {} {}".format(f_sliding, f_torsion, f_rolling))
             #contact meshes
             for n in range(n_cvx_files):
+                print("Adding friction")
                 ET.SubElement(obj, "geom", type="mesh", mesh=chosen_mesh + "_convex_mesh{}".format(n),
                               rgba="0 1 0 0", mass="{}".format(mass_per_elem),
                               contype="7", conaffinity="7", friction="{} {} {}".format(f_sliding, f_torsion, f_rolling)
@@ -183,7 +182,10 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
             else: obj = ET.SubElement(world_body, "body", name=obj_string, pos="0 0 0")
 
             ET.SubElement(obj, "joint", type="free", limited='false', damping="0", armature="0")
-
+        #    ET.SubElement(obj, "geom", type="cylinder",
+        #                  rgba="{} {} {} 1".format(color1[0], color1[1], color1[2]), mass="{}".format(mass),
+            #              contype="0", conaffinity="0", friction="{} {} {}".format(f_sliding, f_torsion, f_rolling))
+#
             # ET.SubElement(obj, "geom", type="box", size="{} {} {}".format(block_width, l1, block_height),
             #                rgba="{} {} {} 1".format(color1[0], color1[1], color1[2]), mass="{}".format(object_mass),
             #                contype="7", conaffinity="7", friction="{} {} {}".format(f_sliding, f_torsion, f_rolling)
@@ -193,7 +195,7 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
             #                rgba="{} {} {} 1".format(color2[0], color2[1], color2[2]), mass="{}".format(object_mass),
             #                contype="7", conaffinity="7", friction="{} {} {}".format(f_sliding, f_torsion, f_rolling)
             #                )
-            ET.SubElement(obj, "inertial", mass="0.1", pos="0 0 0", diaginertia="100000 100000 100000")
+            ET.SubElement(obj, "inertial", mass="{}".format(mass), pos="0 0 0", diaginertia="100000 100000 100000")
 
             # ET.SubElement(obj, "geom", pos="{} {} 0.0".format(l2, pos2), type="cylinder", size=str(cylinder_radius) + " 0.02",
             #                             rgba="{} {} {} 1".format(color2[0], color2[1], color2[2]), mass="{}".format(object_mass),
@@ -209,9 +211,10 @@ def create_object_xml(filename, num_objects, object_mass, friction_params, objec
                                         rgba="1 1 1 1", contype="18", conaffinity="20", material="mat_" + obj_string)
 
             else:
+                print("cylinder", mass, friction_params[i], color2)
                 ET.SubElement(obj, "geom", name=obj_string, pos="0 0 0", type="cylinder", size=str(cylinder_radius) + " 0.015",
                                         rgba="{} {} {} 1".format(color2[0], color2[1], color2[2]),
-                                        contype="18", conaffinity="20", )
+                                     friction="{}".format(friction_params[i]))
 
             # ET.SubElement(obj, "site", name=obj_string, pos="{} {} 0.0".format(l2, pos2), size="0.01")
 

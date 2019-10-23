@@ -25,7 +25,7 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             frame_skip=50,
             pos_action_scale=2. / 100,
             randomize_goals=True,
-            hide_goal=True,
+            hide_goal=False,
             init_block_low=(-0.05, 0.55),
             init_block_high=(0.05, 0.65),
             puck_goal_low=(-0.05, 0.55),
@@ -37,9 +37,6 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             mocap_low=(-0.1, 0.5, 0.0),
             mocap_high=(0.1, 0.7, 0.5),
             force_puck_in_goal_space=False,
-            num_objs = 3,
-            colors=np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [0, 0, 0.5, 1], \
-             [0.5, 0, 0.5, 1], [0, 0.5, 0.5, 1], [1, 0, 0, 1], [0, 0.5, 0, 1]])
     ):
         self.quick_init(locals())
         self.reward_info = reward_info
@@ -58,9 +55,6 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.mocap_low = np.array(mocap_low)
         self.mocap_high = np.array(mocap_high)
         self.force_puck_in_goal_space = force_puck_in_goal_space
-
-        self.num_objs = num_objs
-        self.colors = colors
 
         self._goal_xyxy = self.sample_goal_xyxy()
         # MultitaskEnv.__init__(self, distance_metric_order=2)
@@ -134,6 +128,7 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.viewer.cam.trackbodyid = -1
 
     def step(self, a):
+        init_puck_pos = self.get_puck_pos()
         a = np.clip(a, -1, 1)
         mocap_delta_z = 0.06 - self.data.mocap_pos[0, 2]
         new_mocap_action = np.hstack((
@@ -156,7 +151,7 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         # reward = self.compute_reward(obs, u, obs, self._goal_xyxy)
         reward = self.compute_reward(a, obs)
         done = False
-
+        final_puck_pos = self.get_puck_pos()
         hand_distance = np.linalg.norm(
             self.get_hand_goal_pos() - self.get_endeff_pos()
         )
@@ -164,10 +159,12 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             self.get_puck_goal_pos() - self.get_puck_pos())
         touch_distance = np.linalg.norm(
             self.get_endeff_pos() - self.get_puck_pos())
+        travel_distance = np.linalg.norm(final_puck_pos - init_puck_pos)
         info = dict(
             hand_distance=hand_distance,
             puck_distance=puck_distance,
             touch_distance=touch_distance,
+            travel_distance=travel_distance,
             success=float(hand_distance + puck_distance < 0.06),
         )
         return obs, reward, done, info
@@ -301,9 +298,6 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         )
 
     def reset(self):
-        idx = random.randint(0, self.num_objs-1)
-    #    self.model.geom_rgba[len(self.model.geom_rgba) - 1] = self.colors[idx]
-        self.model.geom_rgba[len(self.model.geom_rgba) - 3] = self.colors[idx]
         velocities = self.data.qvel.copy()
         angles = np.array(self.init_angles)
         self.set_state(angles.flatten(), velocities.flatten())
@@ -315,6 +309,9 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
         self.set_goal_xyxy(self._goal_xyxy)
         self.set_puck_xy(self.sample_puck_xy())
         self.reset_mocap_welds()
+        fric = random.uniform(0.0001, 0.001)
+        self.sim.model.geom_friction[0] = np.array([fric, 0.005, 0.0001])
+        self.sim.model.geom_friction[34] = np.array([fric, 0.005, 0.0001])
         return self._get_obs()
 
     def compute_rewards(self, action, obs, info=None):
@@ -386,6 +383,7 @@ class SawyerPushAndReachXYEnv(MujocoEnv, Serializable, MultitaskEnv):
             'hand_distance',
             'puck_distance',
             'touch_distance',
+            'travel_distance',
             'success',
         ]:
             stat_name = stat_name
